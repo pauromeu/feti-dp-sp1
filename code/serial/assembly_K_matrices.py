@@ -51,8 +51,8 @@ def assembly_KRR_matrix(Ks, ARr, rs):
     return KRR
 
 
-def assembly_KPR_matrix(Ks, APq, ARr, qs, rs):
-    """Returns the global stiffness matrix KPR for the remaining and primal nodes that is assembled 
+def assembly_KRP_matrix(Ks, APq, ARr, qs, rs):
+    """Returns the global stiffness matrix KRP for the remaining and primal nodes that is assembled 
     using the local stiffness matrix and the local-global transformation matrix.
 
     Args:
@@ -65,15 +65,15 @@ def assembly_KPR_matrix(Ks, APq, ARr, qs, rs):
         rs (list): list of local nodes that correspond to remaining nodes
 
     Returns:
-        numpy.ndarray: 2D global stiffness KPR matrix of dimensions P x R where P 
+        numpy.ndarray: 2D global stiffness KPR matrix of dimensions R x P where P 
         and R are the total number of primal and remaining nodes respectively
     """
     NP = np.shape(APq[0])[0]
     NR = np.shape(ARr[0])[0]
-    KPR = np.shape([NP, NR])
+    KRP = np.zeros([NR, NP])
     Kqrs = Ks[rs][:, qs]
 
     for APqs, ARrs in zip(APq, ARr):
-        KPR += ARrs @ Kqrs @ APqs.T
+        KRP += ARrs @ Kqrs @ APqs.T
 
-    return KPR
+    return KRP
