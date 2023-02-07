@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def assembly_KPP_matrix(Ks, APq, qs):
+def assembly_KPP_matrix(Ks, APq, qs, mesh):
     """
     Returns the global stiffness matrix KPP for the primal nodes that is assembled 
     using the local stiffness matrix and the local-global transformation matrix.
@@ -16,8 +16,7 @@ def assembly_KPP_matrix(Ks, APq, qs):
         numpy.ndarray: 2D global stiffness KPP matrix of dimensions P x P where P 
         is the total number of primal nodes
     """
-    NP = np.shape(APq[0])[0]
-    KPP = np.zeros([NP, NP])
+    KPP = np.zeros([mesh.NP, mesh.NP])
     Kqqs = Ks[qs][:, qs]  # Obtain local Kqqs from local Ks
 
     for APqs in APq:
