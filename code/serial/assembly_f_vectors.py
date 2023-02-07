@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def assembly_fR_vector(Nsub_x, Nsub_y, Nr, Nr_x, Nr_y, NR, fr_dat, fR):
+def assembly_fR_vector(Nsub_x, Nsub_y, Nr, Nr_x, Nr_y, NR, fr_dat):
     fR = np.zeros(NR)
     for j in range(Nsub_y):
         for i in range(Nsub_x):
