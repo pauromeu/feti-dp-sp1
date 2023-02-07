@@ -7,6 +7,7 @@ def assembly_BR_matrix(mesh, ARr):
     for j in range(mesh.Nsub_y):
         for i in range(mesh.Nsub_x):
             Brs = np.zeros([mesh.Nlambda, mesh.Nr])
+
             # Local rs nodes in boundaries
             rs_bot = np.arange(mesh.Nr_x - 2)
             rs_top = np.arange(mesh.Nr_x - 2) + \
@@ -15,29 +16,31 @@ def assembly_BR_matrix(mesh, ARr):
                                 * (mesh.Nr_x) + mesh.Nr_x - 2, mesh.Nr_x)
             rs_right = rs_left + mesh.Nr_x - 1
 
-            Nrs_hor = mesh.Nr_x - 2
-            Nrs_ver = mesh.Nr_y - 2
+            Nrs_ver = mesh.Nr_y - 2  # Number of vertical nodes
 
-            # left
+            # Left
             if i > 0:
                 lambda_left = np.arange((i-1) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), Nrs_ver*(
                     mesh.Nsub_x - 1) + (i-1) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), step=mesh.Nsub_x - 1)
                 for lambda_, rs in zip(lambda_left, rs_left):
                     Brs[int(lambda_), int(rs)] = -1
-            # right
+
+            # Right
             if i < mesh.Nsub_x - 1:
                 lambda_right = np.arange((i) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), Nrs_ver*(
                     mesh.Nsub_x - 1) + (i) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), step=mesh.Nsub_x - 1)
                 for lambda_, rs in zip(lambda_right, rs_right):
                     Brs[int(lambda_), int(rs)] = 1
-            # bottom
+
+            # Bottom
             NlambdaR_hor = (mesh.Nr_y - 2)*(mesh.Nsub_y)*(mesh.Nsub_x - 1)
             if j > 0:
                 lambda_bot = np.arange(NlambdaR_hor + (j - 1)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(
                     mesh.Nr_x - 2), NlambdaR_hor + (j - 1)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(mesh.Nr_x - 2) + (mesh.Nr_x - 2))
                 for lambda_, rs in zip(lambda_bot, rs_bot):
                     Brs[int(lambda_), int(rs)] = 1
-            # top
+
+            # Top
             if j < mesh.Nsub_y - 1:
                 lambda_top = np.arange(NlambdaR_hor + (j)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(
                     mesh.Nr_x - 2), NlambdaR_hor + (j)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(mesh.Nr_x - 2) + (mesh.Nr_x - 2))

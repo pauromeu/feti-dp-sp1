@@ -2,20 +2,6 @@ import numpy as np
 
 
 def assembly_KPP_matrix(Ks, APq, qs, mesh):
-    """
-    Returns the global stiffness matrix KPP for the primal nodes that is assembled 
-    using the local stiffness matrix and the local-global transformation matrix.
-
-    Args:
-        Ks (numpy.ndarray): 2D local stiffness matrix of all nodes
-        APq (list of numpy.ndarray): list of local-global trasformation matrices 
-        for primal nodes
-        qs (list): list of local nodes that correspond to primal nodes (e.g. [0, 3, 8, 11])
-
-    Returns:
-        numpy.ndarray: 2D global stiffness KPP matrix of dimensions P x P where P 
-        is the total number of primal nodes
-    """
     KPP = np.zeros([mesh.NP, mesh.NP])
     Kqqs = Ks[qs][:, qs]  # Obtain local Kqqs from local Ks
 
@@ -26,21 +12,6 @@ def assembly_KPP_matrix(Ks, APq, qs, mesh):
 
 
 def assembly_KRR_matrix(Ks, ARr, rs, mesh):
-    """
-    Returns the global stiffness matrix KRR for the remaining nodes that is assembled 
-    using the local stiffness matrix and the local-global transformation matrix.
-
-    Args:
-        Ks (numpy.ndarray): 2D local stiffness matrix of all nodes
-        ARr (list of numpy.ndarray): list of local-global trasformation matrices 
-        for remaining nodes
-        rs (list): list of local nodes that correspond to remaining nodes
-
-    Returns:
-        numpy.ndarray: 2D global stiffness KRR matrix of dimensions R x R where R 
-        is the total number of remaining nodes
-    """
-
     KRR = np.zeros([mesh.NR, mesh.NR])
     Kqqs = Ks[rs][:, rs]  # Obtain local KRR from local Ks
 
@@ -51,22 +22,6 @@ def assembly_KRR_matrix(Ks, ARr, rs, mesh):
 
 
 def assembly_KRP_matrix(Ks, APq, ARr, qs, rs, mesh):
-    """Returns the global stiffness matrix KRP for the remaining and primal nodes that is assembled 
-    using the local stiffness matrix and the local-global transformation matrix.
-
-    Args:
-        Ks (numpy.ndarray): 2D local stiffness matrix of all nodes
-        APq (list of numpy.ndarray): list of local-global trasformation matrices 
-        for primal nodes
-        ARr (list of numpy.ndarray): list of local-global trasformation matrices 
-        for remaining nodes
-        qs (list): list of local nodes that correspond to primal nodes (e.g. [0, 3, 8, 11])
-        rs (list): list of local nodes that correspond to remaining nodes
-
-    Returns:
-        numpy.ndarray: 2D global stiffness KPR matrix of dimensions R x P where P 
-        and R are the total number of primal and remaining nodes respectively
-    """
     KRP = np.zeros([mesh.NR, mesh.NP])
     Kqrs = Ks[rs][:, qs]
 
