@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-def plot_sparse_matrix(A):
+def plot_sparse_matrix(A, title=None):
     """Plot a heat map of the matrix A to visualize the non-zeros position
 
     Args:
@@ -9,4 +9,6 @@ def plot_sparse_matrix(A):
     """
     plt.imshow(A)
     plt.colorbar()
+    if (title):
+        plt.title(title)
     plt.show()
