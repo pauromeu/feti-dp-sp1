@@ -1,79 +1,76 @@
 import numpy as np
 
 
-def assembly_BR_matrix(Nr_x, Nr_y, Nsub_x, Nsub_y, Nlambda, ARr):
-    Nr = Nr_x*Nr_y - 4  # Number of local remaining nodes r
-    NR = Nr*(Nsub_x*Nsub_y)  # Number of total remaining nodes R
-    BlambdaR = np.zeros([Nlambda, NR])
+def assembly_BR_matrix(mesh, ARr):
+    BlambdaR = np.zeros([mesh.Nlambda, mesh.NR])
 
-    for j in range(Nsub_y):
-        for i in range(Nsub_x):
-            Brs = np.zeros([Nlambda, Nr])
+    for j in range(mesh.Nsub_y):
+        for i in range(mesh.Nsub_x):
+            Brs = np.zeros([mesh.Nlambda, mesh.Nr])
             # Local rs nodes in boundaries
-            rs_bot = np.arange(Nr_x - 2)
-            rs_top = np.arange(Nr_x - 2) + (Nr_y - 2)*Nr_x + (Nr_x - 2)
-            rs_left = np.arange(Nr_x - 2, (Nr_y - 2)*(Nr_x) + Nr_x - 2, Nr_x)
-            rs_right = rs_left + Nr_x - 1
+            rs_bot = np.arange(mesh.Nr_x - 2)
+            rs_top = np.arange(mesh.Nr_x - 2) + \
+                (mesh.Nr_y - 2)*mesh.Nr_x + (mesh.Nr_x - 2)
+            rs_left = np.arange(mesh.Nr_x - 2, (mesh.Nr_y - 2)
+                                * (mesh.Nr_x) + mesh.Nr_x - 2, mesh.Nr_x)
+            rs_right = rs_left + mesh.Nr_x - 1
 
-            Nrs_hor = Nr_x - 2
-            Nrs_ver = Nr_y - 2
+            Nrs_hor = mesh.Nr_x - 2
+            Nrs_ver = mesh.Nr_y - 2
 
             # left
             if i > 0:
-                lambda_left = np.arange((i-1) + j*(Nr_y - 2)*(Nsub_x - 1), Nrs_ver*(
-                    Nsub_x - 1) + (i-1) + j*(Nr_y - 2)*(Nsub_x - 1), step=Nsub_x - 1)
-                # print('left', lambda_left)
+                lambda_left = np.arange((i-1) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), Nrs_ver*(
+                    mesh.Nsub_x - 1) + (i-1) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), step=mesh.Nsub_x - 1)
                 for lambda_, rs in zip(lambda_left, rs_left):
                     Brs[int(lambda_), int(rs)] = -1
             # right
-            if i < Nsub_x - 1:
-                lambda_right = np.arange((i) + j*(Nr_y - 2)*(Nsub_x - 1), Nrs_ver*(
-                    Nsub_x - 1) + (i) + j*(Nr_y - 2)*(Nsub_x - 1), step=Nsub_x - 1)
-                # print('right', lambda_right)
+            if i < mesh.Nsub_x - 1:
+                lambda_right = np.arange((i) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), Nrs_ver*(
+                    mesh.Nsub_x - 1) + (i) + j*(mesh.Nr_y - 2)*(mesh.Nsub_x - 1), step=mesh.Nsub_x - 1)
                 for lambda_, rs in zip(lambda_right, rs_right):
                     Brs[int(lambda_), int(rs)] = 1
             # bottom
-            NlambdaR_hor = (Nr_y - 2)*(Nsub_y)*(Nsub_x - 1)
+            NlambdaR_hor = (mesh.Nr_y - 2)*(mesh.Nsub_y)*(mesh.Nsub_x - 1)
             if j > 0:
-                lambda_bot = np.arange(NlambdaR_hor + (j - 1)*(Nr_x - 2)*Nsub_x + i*(
-                    Nr_x - 2), NlambdaR_hor + (j - 1)*(Nr_x - 2)*Nsub_x + i*(Nr_x - 2) + (Nr_x - 2))
-                # print('bot', lambda_bot)
+                lambda_bot = np.arange(NlambdaR_hor + (j - 1)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(
+                    mesh.Nr_x - 2), NlambdaR_hor + (j - 1)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(mesh.Nr_x - 2) + (mesh.Nr_x - 2))
                 for lambda_, rs in zip(lambda_bot, rs_bot):
                     Brs[int(lambda_), int(rs)] = 1
             # top
-            if j < Nsub_y - 1:
-                lambda_top = np.arange(NlambdaR_hor + (j)*(Nr_x - 2)*Nsub_x + i*(
-                    Nr_x - 2), NlambdaR_hor + (j)*(Nr_x - 2)*Nsub_x + i*(Nr_x - 2) + (Nr_x - 2))
-                # print('top', lambda_top)
+            if j < mesh.Nsub_y - 1:
+                lambda_top = np.arange(NlambdaR_hor + (j)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(
+                    mesh.Nr_x - 2), NlambdaR_hor + (j)*(mesh.Nr_x - 2)*mesh.Nsub_x + i*(mesh.Nr_x - 2) + (mesh.Nr_x - 2))
                 for lambda_, rs in zip(lambda_top, rs_top):
                     Brs[int(lambda_), int(rs)] = -1
 
-            BlambdaR += Brs @ ARr[i + j*Nsub_x].T
+            BlambdaR += Brs @ ARr[i + j*mesh.Nsub_x].T
     return BlambdaR
 
 
-def assembly_Dirichlet_BR_matrix(Nlambda, NR, Nsub_y, Nr, Nr_x, Nr_y, NlambdaR, Nsub_x, ARr, BlambdaR):
-    BlambdaR_aux = np.zeros([Nlambda, NR])
-    for j in range(Nsub_y):
-        Brs = np.zeros([Nlambda, Nr])
-        rs_left = np.arange(Nr_x - 2, (Nr_y - 2)*(Nr_x) + Nr_x - 2, Nr_x)
-        lambda_left = np.arange(NlambdaR + (Nr_y - 1)
-                                * j + 1, NlambdaR + (Nr_y - 1)*j + 1 + Nr_y - 2)
+def assembly_Dirichlet_BR_matrix(mesh, ARr, BlambdaR):
+    BlambdaR_aux = np.zeros([mesh.Nlambda, mesh.NR])
+    for j in range(mesh.Nsub_y):
+        Brs = np.zeros([mesh.Nlambda, mesh.Nr])
+        rs_left = np.arange(mesh.Nr_x - 2, (mesh.Nr_y - 2)
+                            * (mesh.Nr_x) + mesh.Nr_x - 2, mesh.Nr_x)
+        lambda_left = np.arange(mesh.NlambdaR + (mesh.Nr_y - 1)
+                                * j + 1, mesh.NlambdaR + (mesh.Nr_y - 1)*j + 1 + mesh.Nr_y - 2)
         # d_left = np.arange(1 + j*(Nr_y - 1), 1+j*(Nr_y - 1) + Nr_y - 2)
         for rs, lambda_ in zip(rs_left, lambda_left):
             Brs[lambda_, rs] = 1
-        BlambdaR_aux += Brs @ ARr[j*Nsub_x].T
+        BlambdaR_aux += Brs @ ARr[j*mesh.Nsub_x].T
 
     BlambdaR += BlambdaR_aux
     return BlambdaR
 
 
-def assembly_Dirichlet_BP_matrix(Nsub_x, Nsub_y, Nr_y, Nlambda, NP, Nq, NlambdaR, APq):
-    BlambdaP = np.zeros([Nlambda, NP])
-    for j in range(Nsub_y):
-        Bqs = np.zeros([Nlambda, Nq])
+def assembly_Dirichlet_BP_matrix(mesh, APq):
+    BlambdaP = np.zeros([mesh.Nlambda, mesh.NP])
+    for j in range(mesh.Nsub_y):
+        Bqs = np.zeros([mesh.Nlambda, mesh.Nq])
         if j == 0:
-            Bqs[NlambdaR, 0] = 1
-        Bqs[NlambdaR + j*(Nr_y - 1) + Nr_y - 1, 2] = 1
-        BlambdaP += Bqs @ APq[j*Nsub_x].T
+            Bqs[mesh.NlambdaR, 0] = 1
+        Bqs[mesh.NlambdaR + j*(mesh.Nr_y - 1) + mesh.Nr_y - 1, 2] = 1
+        BlambdaP += Bqs @ APq[j*mesh.Nsub_x].T
     return BlambdaP
