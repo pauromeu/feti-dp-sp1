@@ -1,20 +1,20 @@
 import numpy as np
 
 
-def assembly_fR_vector(Nsub_x, Nsub_y, Nr, Nr_x, Nr_y, NR, fr_dat):
-    fR = np.zeros(NR)
-    for j in range(Nsub_y):
-        for i in range(Nsub_x):
+def assembly_fR_vector(mesh, fr_dat):
+    fR = np.zeros(mesh.NR)
+    for j in range(mesh.Nsub_y):
+        for i in range(mesh.Nsub_x):
             Rs = []
-            for sj in range(Nr_y):
+            for sj in range(mesh.Nr_y):
                 if sj == 0:
                     Rs = np.concatenate([Rs, np.arange(
-                        j*(Nsub_x*Nr) + i*(Nr_x - 2), j*(Nsub_x*Nr) + i*(Nr_x - 2) + Nr_x - 2)])
-                elif sj == Nr_y - 1:
-                    Rs = np.concatenate([Rs, np.arange(j*(Nsub_x*Nr) + i*(Nr_x - 2) + Nsub_x*Nr_x*(Nr_y - 2) + Nsub_x*(Nr_x - 2),
-                                                       j*(Nsub_x*Nr) + i*(Nr_x - 2) + Nsub_x*Nr_x*(Nr_y - 2) + Nsub_x*(Nr_x - 2) + Nr_x - 2)])
+                        j*(mesh.Nsub_x*mesh.Nr) + i*(mesh.Nr_x - 2), j*(mesh.Nsub_x*mesh.Nr) + i*(mesh.Nr_x - 2) + mesh.Nr_x - 2)])
+                elif sj == mesh.Nr_y - 1:
+                    Rs = np.concatenate([Rs, np.arange(j*(mesh.Nsub_x*mesh.Nr) + i*(mesh.Nr_x - 2) + mesh.Nsub_x*mesh.Nr_x*(mesh.Nr_y - 2) + mesh.Nsub_x*(mesh.Nr_x - 2),
+                                                       j*(mesh.Nsub_x*mesh.Nr) + i*(mesh.Nr_x - 2) + mesh.Nsub_x*mesh.Nr_x*(mesh.Nr_y - 2) + mesh.Nsub_x*(mesh.Nr_x - 2) + mesh.Nr_x - 2)])
                 else:
-                    Rs = np.concatenate([Rs, np.arange(j*(Nsub_x*Nr) + i*(Nr_x) + Nsub_x*Nr_x*(sj - 1) + Nsub_x*(Nr_x - 2),
-                                                       j*(Nsub_x*Nr) + i*(Nr_x) + Nsub_x*Nr_x*(sj - 1) + Nsub_x*(Nr_x - 2) + Nr_x)])
+                    Rs = np.concatenate([Rs, np.arange(j*(mesh.Nsub_x*mesh.Nr) + i*(mesh.Nr_x) + mesh.Nsub_x*mesh.Nr_x*(sj - 1) + mesh.Nsub_x*(mesh.Nr_x - 2),
+                                                       j*(mesh.Nsub_x*mesh.Nr) + i*(mesh.Nr_x) + mesh.Nsub_x*mesh.Nr_x*(sj - 1) + mesh.Nsub_x*(mesh.Nr_x - 2) + mesh.Nr_x)])
             fR[Rs.astype(int)] = fr_dat
     return fR
