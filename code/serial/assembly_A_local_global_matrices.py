@@ -2,22 +2,7 @@ import numpy as np
 
 
 def create_APq_matrices(mesh):
-    """Returns an array of matrices used to transform the local coordinates of 
-    primal nodes to global coordinates. The output is a matrix with a number 
-    of columns equal to the number of local nodes and a number of rows equal to
-    the number of global nodes. The matrix has 1's in the row-column combinations
-    that show the transformation
-
-    Args:
-        Nsub_x (int): Number of subdomains in x direction
-        Nsub_y (int): Number of subdomains in y direction
-
-    Returns:
-        list of numpy.ndarray: Array of length Nsub_x * Nsub_y of APq matrices used 
-        to transform a local node q into global node P for each subdomain
-    """
-
-    APq_array = []
+    APq_array = []  # Array of APq matrices for each subdomain
 
     for j in range(mesh.Nsub_y):
         for i in range(mesh.Nsub_x):
@@ -36,22 +21,6 @@ def create_APq_matrices(mesh):
 
 
 def create_ARr_matrices(mesh):
-    """Returns an array of matrices used to transform the local coordinates of 
-    remainig nodes to global coordinates. The output is a matrix with a number 
-    of columns equal to the number of local nodes and a number of rows equal to
-    the number of global nodes. The matrix has 1's in the row-column combinations
-    that show the transformation
-
-    Args:
-        Nsub_x (int): Number of subdomains in x direction
-        Nsub_y (int): Number of subdomains in y direction
-        Nr_x (int): Number of local remaining nodes in each subdomain in x direction
-        Nr_y (int): Number of local remaining nodes in each subdomain in y direction
-
-    Returns:
-        list of numpy.ndarray: Array of length Nsub_x * Nsub_y of ARr matrices used 
-        to transform a local node r into global node R for each subdomain
-    """
     ARr_array = []  # Array of ARr matrices for each subdomain
 
     for j in range(mesh.Nsub_y):
