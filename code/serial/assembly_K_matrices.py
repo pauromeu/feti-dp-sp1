@@ -37,3 +37,16 @@ def assembly_KRP_matrix(Ks, APq, ARr, qs, qs_left_bound, rs, mesh):
         KRP += ARrs @ Kqrs @ APqs.T
 
     return KRP
+
+
+# TODO
+
+
+def assembly_KPD_matrix():
+    return 0
+
+# TODO
+
+
+def assembly_KRD_matrix():
+    return 0
