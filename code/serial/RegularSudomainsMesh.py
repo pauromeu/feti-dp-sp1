@@ -10,7 +10,7 @@ class RegularSubdomainsMesh:
 
         # Number of primal nodes
         self.Nq = 4  # local
-        self.NP = (Nsub_x + 1) * (Nsub_y + 1)  # global
+        self.NP = (Nsub_x + 1) * (Nsub_y + 1) - (Nsub_y + 1)  # global
 
         # Number of remaining nsodes
         self.Nr = Nr_x*Nr_y - 4  # local
