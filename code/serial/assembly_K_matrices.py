@@ -1,11 +1,15 @@
 import numpy as np
 
 
-def assembly_KPP_matrix(Ks, APq, qs, mesh):
+def assembly_KPP_matrix(Ks, APq, qs, qs_left_bound, mesh):
     KPP = np.zeros([mesh.NP, mesh.NP])
-    Kqqs = Ks[qs][:, qs]  # Obtain local Kqqs from local Ks
 
     for APqs in APq:
+        if np.shape(APqs)[1] == len(qs):
+            Kqqs = Ks[qs][:, qs]  # Obtain local Kqqs from local Ks
+        else:
+            # Obtain local Kqqs from local Ks
+            Kqqs = Ks[qs_left_bound][:, qs_left_bound]
         KPP += APqs @ Kqqs @ APqs.T
 
     return KPP
@@ -21,11 +25,15 @@ def assembly_KRR_matrix(Ks, ARr, rs, mesh):
     return KRR
 
 
-def assembly_KRP_matrix(Ks, APq, ARr, qs, rs, mesh):
+def assembly_KRP_matrix(Ks, APq, ARr, qs, qs_left_bound, rs, mesh):
     KRP = np.zeros([mesh.NR, mesh.NP])
-    Kqrs = Ks[rs][:, qs]
 
     for APqs, ARrs in zip(APq, ARr):
+        if np.shape(APqs)[1] == len(qs):
+            Kqrs = Ks[rs][:, qs]  # Obtain local Kqqs from local Ks
+        else:
+            # Obtain local Kqqs from local Ks
+            Kqrs = Ks[rs][:, qs_left_bound]
         KRP += ARrs @ Kqrs @ APqs.T
 
     return KRP
