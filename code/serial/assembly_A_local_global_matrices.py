@@ -6,13 +6,19 @@ def create_APq_matrices(mesh):
 
     for j in range(mesh.Nsub_y):
         for i in range(mesh.Nsub_x):
-            P_nodes = [
-                j*(mesh.Nsub_x + 1) + i,
-                j*(mesh.Nsub_x + 1) + i + 1,
-                (j + 1)*(mesh.Nsub_x + 1) + i,
-                (j + 1)*(mesh.Nsub_x + 1) + i + 1
-            ]
-            APqs = np.zeros([mesh.NP, mesh.Nq])
+            if i == 0:
+                P_nodes = [
+                    j*mesh.Nsub_x,
+                    (j + 1)*mesh.Nsub_x
+                ]
+            else:
+                P_nodes = [
+                    j*(mesh.Nsub_x) + i,
+                    j*(mesh.Nsub_x) + i + 1,
+                    (j + 1)*(mesh.Nsub_x) + i,
+                    (j + 1)*(mesh.Nsub_x) + i + 1
+                ]
+            APqs = np.zeros([len(P_nodes), mesh.Nq])
             for col, node in enumerate(P_nodes):
                 APqs[node, col] = 1
             APq_array.append(APqs)
