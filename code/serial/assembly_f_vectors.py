@@ -20,8 +20,9 @@ def assembly_fR_vector(mesh, fr_dat):
     return fR
 
 
-def assembly_fP_vector(mesh, fP_dat):
+def assembly_fP_fD_vectors(mesh, fP_dat):
     indices = np.arange((mesh.Nsub_x + 1) * (mesh.Nsub_y + 1)) % (
-        mesh.Nsub_x + 1) != 0  # Remove Dirichlet nodes
-    fP = fP_dat[indices]
-    return fP
+        mesh.Nsub_x + 1) == 0
+    fP = fP_dat[~indices]
+    fD = fP_dat[indices]
+    return fP, fD
