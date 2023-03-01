@@ -43,11 +43,10 @@ def assembly_KPD_matrix(Ks, APq, ADq, qs_left_bound, qs_right_bound, mesh):
     KPD = np.zeros([mesh.NP, mesh.ND])
 
     for APqs, ADqs in zip(APq, ADq):
-        if len(ADq) < 1:
+        if type(ADqs) is not np.ndarray:
             continue
-        Kqds = Ks[qs_left_bound][:, qs_right_bound]
-        KPD += APqs @ Kqds @ ADqs
-
+        Kqds = Ks[qs_right_bound][:, qs_left_bound]
+        KPD += APqs @ Kqds @ ADqs.T
     return KPD
 
 
@@ -55,9 +54,9 @@ def assembly_KRD_matrix(Ks, ARr, ADq, qs_left_bound, rs, mesh):
     KRD = np.zeros([mesh.NR, mesh.ND])
 
     for ARrs, ADqs in zip(ARr, ADq):
-        if len(ADq) < 1:
+        if type(ADqs) is not np.ndarray:
             continue
-        Krds = Ks[qs_left_bound][:, rs]
-        KPD += ARrs @ Krds @ ADqs
+        Krds = Ks[rs][:, qs_left_bound]
+        KRD += ARrs @ Krds @ ADqs.T
 
     return KRD
