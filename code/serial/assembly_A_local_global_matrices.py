@@ -49,3 +49,21 @@ def create_ARr_matrices(mesh):
             ARr_array.append(ARrs)
 
     return ARr_array
+
+
+def create_ADq_matrices(mesh):
+    ADq_array = []
+    for j in range(mesh.Nsub_y):
+        for i in range(mesh.Nsub_x):
+            if i == 0:
+                D_nodes = [
+                    j,
+                    j + 1
+                ]
+                ADqs = np.zeros([mesh.ND, len(D_nodes)])
+                for col, node in enumerate(D_nodes):
+                    ADqs[int(node), col] = 1
+            else:
+                ADqs = []
+            ADq_array.append(ADqs)
+    return ADq_array
