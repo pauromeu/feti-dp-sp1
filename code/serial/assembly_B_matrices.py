@@ -68,12 +68,12 @@ def assembly_Dirichlet_BR_matrix(mesh, ARr, BlambdaR):
     return BlambdaR
 
 
-def assembly_Dirichlet_BP_matrix(mesh, APq):
+def assembly_Dirichlet_BP_matrix(mesh, ADd):
     BlambdaP = np.zeros([mesh.Nlambda, mesh.NP])
     for j in range(mesh.Nsub_y):
-        Bqs = np.zeros([mesh.Nlambda, mesh.Nq])
+        Bqs = np.zeros([mesh.Nlambda, mesh.Nd])
         if j == 0:
             Bqs[mesh.NlambdaR, 0] = 1
-        Bqs[mesh.NlambdaR + j*(mesh.Nr_y - 1) + mesh.Nr_y - 1, 2] = 1
-        BlambdaP += Bqs @ APq[j*mesh.Nsub_x].T
+        Bqs[mesh.NlambdaR + j*(mesh.Nr_y - 1) + mesh.Nr_y - 1, 1] = 1
+        BlambdaP += Bqs @ ADd[j*mesh.Nsub_x].T
     return BlambdaP

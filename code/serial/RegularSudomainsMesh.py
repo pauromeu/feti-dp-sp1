@@ -17,6 +17,7 @@ class RegularSubdomainsMesh:
         self.NR = self.Nr * (Nsub_x*Nsub_y)  # global
 
         # Number of Dirichlet nodes
+        self.Nd = 2  # local
         self.ND = Nsub_y + 1  # global
 
         # Number of lambda nodes
