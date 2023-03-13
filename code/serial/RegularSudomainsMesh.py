@@ -22,7 +22,6 @@ class RegularSubdomainsMesh:
 
         # Number of lambda nodes
         self.NlambdaR = (Nsub_x*(Nr_x - 2)) * (Nsub_y - 1) + \
-            (Nsub_y*(Nr_y - 2)) * (Nsub_x - 1) - (Nsub_y + 1)
-        self.NlambdaP_Dir = Nsub_y + 1
+            (Nsub_y*(Nr_y - 2)) * (Nsub_x - 1)
         self.NlambdaR_Dir = (Nr_y - 2)*Nsub_y
-        self.Nlambda = self.NlambdaR + self.NlambdaR_Dir + self.NlambdaP_Dir
+        self.Nlambda = self.NlambdaR + self.NlambdaR_Dir
