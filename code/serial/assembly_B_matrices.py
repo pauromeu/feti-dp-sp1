@@ -57,8 +57,8 @@ def assembly_Dirichlet_BR_matrix(mesh, ARr, BlambdaR):
         Brs = np.zeros([mesh.Nlambda, mesh.Nr])
         rs_left = np.arange(mesh.Nr_x - 2, (mesh.Nr_y - 2)
                             * (mesh.Nr_x) + mesh.Nr_x - 2, mesh.Nr_x)
-        lambda_left = np.arange(mesh.NlambdaR + (mesh.Nr_y - 1)
-                                * j + 1, mesh.NlambdaR + (mesh.Nr_y - 1)*j + 1 + mesh.Nr_y - 2)
+        lambda_left = np.arange(mesh.NlambdaR + (mesh.Nr_y - 2)*j,
+                                mesh.NlambdaR + (mesh.Nr_y - 2)*j + mesh.Nr_y - 2)
         # d_left = np.arange(1 + j*(Nr_y - 1), 1+j*(Nr_y - 1) + Nr_y - 2)
         for rs, lambda_ in zip(rs_left, lambda_left):
             Brs[lambda_, rs] = 1
