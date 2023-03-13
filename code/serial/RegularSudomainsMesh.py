@@ -25,3 +25,8 @@ class RegularSubdomainsMesh:
             (Nsub_y*(Nr_y - 2)) * (Nsub_x - 1)
         self.NlambdaR_Dir = (Nr_y - 2)*Nsub_y
         self.Nlambda = self.NlambdaR + self.NlambdaR_Dir
+
+        # Number of global nodes
+        self.Ntot_x = Nsub_x * (Nr_x - 1) + 1
+        self.Ntot_y = Nsub_y * (Nr_y - 1) + 1
+        self.Ntot = self.Ntot_x * self.Ntot_y
