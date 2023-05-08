@@ -27,6 +27,7 @@ def assembly_KRR_matrix(Ks, ARr, rs, mesh):
 
 def assembly_KRP_matrix(Ks, APq, ARr, qs, qs_left_bound, rs, mesh):
     KRP = np.zeros([mesh.NR, mesh.NP])
+    Krqs_list = []
 
     for APqs, ARrs in zip(APq, ARr):
         if np.shape(APqs)[1] == len(qs):
@@ -35,8 +36,9 @@ def assembly_KRP_matrix(Ks, APq, ARr, qs, qs_left_bound, rs, mesh):
             # Obtain local Kqqs from local Ks
             Kqrs = Ks[rs][:, qs_left_bound]
         KRP += ARrs @ Kqrs @ APqs.T
+        Krqs_list.append(Kqrs)
 
-    return KRP
+    return KRP, Krqs_list
 
 
 def assembly_KPD_matrix(Ks, APq, ADq, qs_left_bound, qs_right_bound, mesh):

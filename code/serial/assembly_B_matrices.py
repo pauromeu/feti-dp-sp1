@@ -3,6 +3,7 @@ import numpy as np
 
 def assembly_BR_matrix(mesh, ARr):
     BlambdaR = np.zeros([mesh.Nlambda, mesh.NR])
+    Brs_list = []
 
     for j in range(mesh.Nsub_y):
         for i in range(mesh.Nsub_x):
@@ -47,11 +48,12 @@ def assembly_BR_matrix(mesh, ARr):
                 for lambda_, rs in zip(lambda_top, rs_top):
                     Brs[int(lambda_), int(rs)] = -1
 
+            Brs_list.append(Brs)
             BlambdaR += Brs @ ARr[i + j*mesh.Nsub_x].T
-    return BlambdaR
+    return BlambdaR, Brs_list
 
 
-def assembly_Dirichlet_BR_matrix(mesh, ARr, BlambdaR):
+def assembly_Dirichlet_BR_matrix(mesh, ARr, BlambdaR, BRs_list):
     BlambdaR_aux = np.zeros([mesh.Nlambda, mesh.NR])
     for j in range(mesh.Nsub_y):
         Brs = np.zeros([mesh.Nlambda, mesh.Nr])
@@ -63,9 +65,10 @@ def assembly_Dirichlet_BR_matrix(mesh, ARr, BlambdaR):
         for rs, lambda_ in zip(rs_left, lambda_left):
             Brs[lambda_, rs] = 1
         BlambdaR_aux += Brs @ ARr[j*mesh.Nsub_x].T
+        BRs_list[j*mesh.Nsub_x] += Brs
 
     BlambdaR += BlambdaR_aux
-    return BlambdaR
+    return BlambdaR, BRs_list
 
 
 def assembly_Dirichlet_BP_matrix(mesh, ADd):
