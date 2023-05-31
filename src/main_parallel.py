@@ -52,6 +52,7 @@ qs = np.array([0, 3, 8, 11])
 qs_left_bound = np.array([0, 8])
 qs_right = np.array([3, 11])
 
+
 # Create mesh
 mesh = RegularSubdomainsMesh(Nsub_x, Nsub_y, Nr_x, Nr_y)
 
