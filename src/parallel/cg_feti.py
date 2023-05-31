@@ -28,12 +28,13 @@ def solve_cholesky(L, b):
 
 def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP):
     # print("This is rank ", rank, " with low:", low, " and high: ", high)
+    n = BRs_list[0].shape[0]
 
     x_local = np.zeros(APq[0].shape[0])
     b_local = np.zeros(n)
     for (Apqs, Kqrs, Brs) in zip(APq[low:high], Kqrs_list[low:high], BRs_list[low:high]):
         x_local += Apqs @ Kqrs @ Krrs_inv @ Brs.T @ p
-        b_local += BRs @ Krrs_inv @ BRs.T @ p
+        b_local += Brs @ Krrs_inv @ Brs.T @ p
 
     x = np.zeros_like(x_local)
     comm.Allreduce(x_local, x, op=MPI.SUM)
@@ -42,8 +43,6 @@ def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, 
     if rank == 0:
         alpha = solve_cholesky(LA_SPP, x)
     comm.Bcast(alpha, root=0)
-
-    n = BRs_list[0].shape[0]
 
     a_local = np.zeros(n)
     for (BRs, Kqrs, Apqs) in zip(BRs_list[low:high], Kqrs_list[low:high], APq[low:high]):
@@ -92,5 +91,6 @@ def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, *args):
         p = r + (rsnew / rsold) * p
         rsold = rsnew
 
-    print(f"Number of iterations required: {i + 1}")
+    if rank == 0:
+        print(f"Number of iterations required: {i + 1}")
     return lamb

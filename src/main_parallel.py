@@ -113,8 +113,14 @@ F = -BlambdaR @ KRR_inv @ (KRP @ SPP_inv @ KPR @ KRR_inv + IR) @ BlambdaR.T
 
 # Solve lambda linear system
 # lambda_ = np.linalg.solve(F, dH)
+
+start = MPI.Wtime()
+
 lambda_ = cg_parallel_feti(comm, size, rank, dH, np.zeros_like(dH), 1e-10,
                            SPP, APq, Ks, rs, Kqrs_list, BRs_list)
+
+end = MPI.Wtime()
+elapsed_time = end - start
 
 # Compute u
 # uP
@@ -132,10 +138,13 @@ u = assembly_u_solution(mesh, uD, uP, uR, BlambdaR)
 # Plot solution field as a matrix
 u_mat = u.reshape((mesh.Ntot_y, mesh.Ntot_x))
 if rank == 0:
-    plot_sparse_matrix(u_mat, 'Solution - u field')
+    print('Computing time with %i nodes: %f s' %
+          (size, np.round(elapsed_time, 5)))
 
-# Compare results with actual solution to check
-if np.allclose(u, solution):
-    print('The solution provided is as expected!')
-else:
-    print('Solution is not correct')
+    # Compare results with actual solution to check
+    if np.allclose(u, solution):
+        print('The solution provided is as expected!')
+    else:
+        print('Solution is not correct')
+
+    plot_sparse_matrix(u_mat, 'Solution - u field')
