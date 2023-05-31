@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.linalg as LA
+from mpi4py import MPI
 from scipy.linalg import solve_triangular
 
 
@@ -25,30 +26,45 @@ def solve_cholesky(L, b):
     return x
 
 
-def subdomains_mat_vec_multiplication(p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP):
-    # In parallel
-    x = np.zeros(APq[0].shape[0])
-    for (Apqs, Kqrs, Brs) in zip(APq, Kqrs_list, BRs_list):
-        x += Apqs @ Kqrs @ Krrs_inv @ Brs.T @ p
+def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP):
+    # print("This is rank ", rank, " with low:", low, " and high: ", high)
 
-    alpha = solve_cholesky(LA_SPP, x)
+    x_local = np.zeros(APq[0].shape[0])
+    b_local = np.zeros(n)
+    for (Apqs, Kqrs, Brs) in zip(APq[low:high], Kqrs_list[low:high], BRs_list[low:high]):
+        x_local += Apqs @ Kqrs @ Krrs_inv @ Brs.T @ p
+        b_local += BRs @ Krrs_inv @ BRs.T @ p
+
+    x = np.zeros_like(x_local)
+    comm.Allreduce(x_local, x, op=MPI.SUM)
+
+    alpha = np.zeros_like(x)
+    if rank == 0:
+        alpha = solve_cholesky(LA_SPP, x)
+    comm.Bcast(alpha, root=0)
 
     n = BRs_list[0].shape[0]
 
-    a = np.zeros(n)
-    for (BRs, Kqrs, Apqs) in zip(BRs_list, Kqrs_list, APq):
-        a += BRs @ Krrs_inv @ Kqrs.T @ Apqs.T @ alpha
+    a_local = np.zeros(n)
+    for (BRs, Kqrs, Apqs) in zip(BRs_list[low:high], Kqrs_list[low:high], APq[low:high]):
+        a_local += BRs @ Krrs_inv @ Kqrs.T @ Apqs.T @ alpha
 
-    b = np.zeros(n)
-    for BRs in BRs_list:
-        b += BRs @ Krrs_inv @ BRs.T @ p
+    a = np.zeros_like(a_local)
+    comm.Allreduce(a_local, a, op=MPI.SUM)
+
+    b = np.zeros_like(b_local)
+    comm.Allreduce(b_local, b, op=MPI.SUM)
 
     Fp = -(a + b)
     return Fp
 
 
-def cg_feti(d, lamb, tol=1e-10, *args):
+def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, *args):
     SPP, APq, Ks, rs, Kqrs_list, BRs_list = args
+
+    chunk = len(APq) // size
+    low = rank * chunk
+    high = (rank + 1) * chunk if rank != size - 1 else len(APq)
 
     Krrs = Ks[rs][:, rs]
     Krrs_inv = LA.inv(Krrs)
@@ -57,14 +73,16 @@ def cg_feti(d, lamb, tol=1e-10, *args):
     # r = d - np.dot(F, lamb)
     r = d - \
         subdomains_mat_vec_multiplication(
-            lamb, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP)
+            comm, rank, low, high, lamb, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP
+        )
     p = r.copy()
     rsold = np.dot(r.T, r)
 
     for i in range(len(d)):
         # Fp = np.dot(F, p)
         Fp = subdomains_mat_vec_multiplication(
-            p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP)
+            comm, rank, low, high, p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP
+        )
         alpha = rsold / np.dot(p.T, Fp)
         lamb = lamb + alpha * p
         r = r - alpha * Fp

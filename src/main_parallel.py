@@ -113,8 +113,8 @@ F = -BlambdaR @ KRR_inv @ (KRP @ SPP_inv @ KPR @ KRR_inv + IR) @ BlambdaR.T
 
 # Solve lambda linear system
 # lambda_ = np.linalg.solve(F, dH)
-lambda_ = cg_feti(dH, np.zeros_like(dH), 1e-10,
-                  SPP, APq, Ks, rs, Kqrs_list, BRs_list)
+lambda_ = cg_parallel_feti(comm, size, rank, dH, np.zeros_like(dH), 1e-10,
+                           SPP, APq, Ks, rs, Kqrs_list, BRs_list)
 
 # Compute u
 # uP

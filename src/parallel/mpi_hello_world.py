@@ -44,3 +44,5 @@ elapsed_time = end - start
 if rank == 0:
     result = result[:N]
     print(f"Elapsed time with {size} processes: {elapsed_time} seconds")
+
+MPI.Finalize()
