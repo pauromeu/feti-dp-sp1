@@ -1,6 +1,7 @@
 # Import modules
 import numpy as np
 import os
+from mpi4py import MPI
 
 # Import functions
 from common.assembly_A_local_global_matrices import *
@@ -29,6 +30,12 @@ fP_dat = np.genfromtxt(fP_path)
 fr_dat = np.genfromtxt(fr_path)
 Ks = np.genfromtxt(Ks_path)
 solution = np.genfromtxt(sol_path)
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+print(rank)
 
 # Initial data
 # Number of subdomains
@@ -124,7 +131,8 @@ u = assembly_u_solution(mesh, uD, uP, uR, BlambdaR)
 
 # Plot solution field as a matrix
 u_mat = u.reshape((mesh.Ntot_y, mesh.Ntot_x))
-plot_sparse_matrix(u_mat, 'Solution - u field')
+if rank == 0:
+    plot_sparse_matrix(u_mat, 'Solution - u field')
 
 # Compare results with actual solution to check
 if np.allclose(u, solution):
