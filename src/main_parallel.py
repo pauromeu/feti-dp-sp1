@@ -19,7 +19,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the relative paths based on the current file's location
 d_path = os.path.join(current_dir, "..", "data", "small", "d.dat")
-fP_path = os.path.join(current_dir, "..", "data", "small", "fP.dat")
+fP_path = os.path.join(current_dir, "..", "data", "small", "fP10.dat")
 fr_path = os.path.join(current_dir, "..", "data", "small", "fr.dat")
 Ks_path = os.path.join(current_dir, "..", "data", "small", "localK.dat")
 sol_path = os.path.join(current_dir, "..", "data", "small", "solution.dat")
@@ -35,11 +35,9 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-print(rank)
-
 # Initial data
 # Number of subdomains
-Nsub_x = 4
+Nsub_x = 40
 Nsub_y = 3
 
 # Number of remaining nodes in each subdomain
@@ -143,9 +141,9 @@ if rank == 0:
           (size, np.round(elapsed_time, 5)))
 
     # Compare results with actual solution to check
-    if np.allclose(u, solution):
-        print('The solution provided is as expected!')
-    else:
-        print('Solution is not correct')
+    # if np.allclose(u, solution):
+    #     print('The solution provided is as expected!')
+    # else:
+    #     print('Solution is not correct')
 
     plot_sparse_matrix(u_mat, 'Solution - u field')

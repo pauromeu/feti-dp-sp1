@@ -43,7 +43,7 @@ def create_ARr_matrices(mesh):
                     R_nodes = np.concatenate(
                         [R_nodes, np.arange(mesh.Nr_x) + mesh.Nr*mesh.Nsub_x*j + (mesh.Nr_x)*i + (mesh.Nr_x*k - 2)*mesh.Nsub_x])
 
-            ARrs = np.zeros([mesh.NR, mesh.Nr])
+            ARrs = np.zeros((mesh.NR, mesh.Nr))
             for col, node in enumerate(R_nodes):
                 ARrs[int(node), col] = 1
             ARr_array.append(ARrs)
