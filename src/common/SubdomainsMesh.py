@@ -1,6 +1,9 @@
 import numpy as np
 from common.assembly_A_local_global_matrices import *
 from common.assembly_K_matrices import *
+from mpi4py import MPI
+from parallel.cg_feti import *
+from common.utils import *
 
 
 def create_ARr_matrices_big(mesh):
@@ -90,7 +93,7 @@ def assembly_Dirichlet_BR_matrix_big(mesh):
 
     for j in range(mesh.Nsub_y):
         Brs = np.zeros([mesh.NLambda, mesh.Nr])
-        rs_left = mesh.left_r
+        rs_left = mesh.get_remaining_numeration(mesh.left_r)
         lambda_left = np.arange(
             mesh.NLambdaR + mesh.Nr_y*j, mesh.NLambdaR + mesh.Nr_y*j + mesh.Nr_y)
         for rs, lambda_ in zip(rs_left, lambda_left):
@@ -119,13 +122,6 @@ def assemby_fP_vector(mesh):
     for j in range(mesh.Nsub_y):
         for i in range(mesh.Nsub_x):
             if i > 0:
-                # fq = np.zeros(mesh.Nr)
-                # qs_loc = [
-                #     mesh.Nsub_x*j+ i - 1,
-                #     mesh.Nsub_x*j + i,
-                #     mesh.Nsub_x*(j + 1) + i - 1,
-                #     mesh.Nsub_x*(j + 1) + i
-                # ]
                 fq = mesh.fs[mesh.qs]
             else:
                 fq = mesh.fs[mesh.qs_right]
@@ -189,6 +185,15 @@ class SubdomainsMesh:
             - len(self.left_r) * (Nsub_x - 1) * Nsub_y \
             - len(self.top_r) * (Nsub_y - 1) * Nsub_x
 
+    @classmethod
+    def from_problem(cls, Nsub_x, Nsub_y, problem):
+        Ks = problem.generate_stiffness_matrix()
+        fs = problem.generate_load_vector()
+        qs = problem.get_corners()
+        bounds_r = problem.get_boundaries()
+        rs = np.setdiff1d(np.arange(problem.nx * problem.ny), qs)
+        return cls(Nsub_x, Nsub_y, Ks, fs, qs, rs, bounds_r)
+
     def __repr__(self):
         return 'SubdomainsMesh()'
 
@@ -220,6 +225,7 @@ class SubdomainsMesh:
         self.KRP, self.Krqs_list = assembly_KRP_matrix(
             self.Ks, self.APq_array, self.ARr_array, self.qs, self.qs_right, self.rs, self)
         self.KPR = self.KRP.T
+        self.Kqrs_list = [Krqs.T for Krqs in self.Krqs_list]
         self.KPD = assembly_KPD_matrix(
             self.Ks, self.APq_array, self.ADq_array, self.qs_left_bound, self.qs_right, self)
         self.KRD = assembly_KRD_matrix(
@@ -266,6 +272,15 @@ class SubdomainsMesh:
         N = self.Ntot
         u = np.array()
 
+    def get_F_condition_number(self):
+        KRR_inv = np.linalg.inv(self.KRR)
+        self.SPP = self.KPP - self.KPR @ KRR_inv @ self.KRP
+        SPP_inv = np.linalg.inv(self.SPP)
+        IR = np.eye(self.NR)  # RxR identity matrix
+        self.F = -self.BlambdaR @ KRR_inv @ (self.KRP @ SPP_inv @
+                                             self.KPR @ KRR_inv + IR) @ self.BlambdaR.T
+        self.cond_num = np.linalg.cond(self.F)
+
     def solve(self):
         KRR_inv = np.linalg.inv(self.KRR)
         # KRR_inv = inv(KRR)
@@ -298,5 +313,161 @@ class SubdomainsMesh:
             - KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @
                          KRR_inv) @ self.BlambdaR.T @ lambda_
 
+    def solve_parallel(self, comm, size, rank, returns_run_info=False):
+        KRR_inv = np.linalg.inv(self.KRR)
+        SPP = self.KPP - self.KPR @ KRR_inv @ self.KRP
+        SPP_inv = np.linalg.inv(SPP)
+
+        fPH = self.fP - self.KPD @ self.uD
+        fRH = self.fR - self.KRD @ self.uD
+
+        IR = np.eye(self.NR)  # RxR identity matrix
+
+        dH = self.d - self.BlambdaR @ KRR_inv @ ((IR + self.KRP @ SPP_inv @
+                                                  self.KPR @ KRR_inv) @ fRH - self.KRP @ SPP_inv @ fPH)
+        start = MPI.Wtime()
+
+        lambda_, iterations, time = cg_parallel_feti(comm, size, rank, dH, np.zeros_like(dH), 1e-10, returns_run_info,
+                                                     SPP, self.APq_array, self.Ks, self.rs, self.Kqrs_list, self.Brs_list
+                                                     )
+
+        end = MPI.Wtime()
+        if rank == 0:
+            print("Time to run CG with", size,
+                  "processors ->", round(end - start, 5), "s")
+
+        # Compute u
+        # uP
+        self.uP = SPP_inv @ (fPH - self.KPR @ KRR_inv @ fRH +
+                             self.KPR @ KRR_inv @ self.BlambdaR.T @ lambda_)
+
+        # uR
+        self.uR = KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @ KRR_inv) @ fRH \
+            - KRR_inv @ self.KRP @ SPP_inv @ fPH \
+            - KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @
+                         KRR_inv) @ self.BlambdaR.T @ lambda_
+
+        if returns_run_info:
+            return [iterations, time]
+
     def assembly_u_vector(self):
         u = np.zeros(self.Ntot)
+        nodesD = np.arange()
+
+    def build_and_solve(self):
+        self.set_A_global_local_matrices()
+        self.set_K_matrices()
+        self.set_B_matrices()
+        self.set_f_vectors()
+        self.set_d_vector()
+        self.set_uD_vector()
+        self.solve()
+
+    def build_and_solve_parallel(self, comm, size, rank, returns_run_info=False):
+        self.set_A_global_local_matrices()
+        self.set_K_matrices()
+        self.set_B_matrices()
+        self.set_f_vectors()
+        self.set_d_vector()
+        self.set_uD_vector()
+        self.get_F_condition_number()
+        if returns_run_info:
+            run_info = self.solve_parallel(comm, size, rank, returns_run_info)
+            return run_info
+        else:
+            self.solve_parallel()
+
+    def plot_u_boundaries(self):
+        Nbound_x = (self.Nsub_x + 1) + self.Nsub_x * len(self.bottom_r)
+        Nbound_y = (self.Nsub_y + 1) + self.Nsub_y * len(self.left_r)
+        Nbound_xs = len(self.bottom_r) + 2
+        Nbound_ys = len(self.left_r) + 2
+
+        u = np.zeros(Nbound_x * Nbound_y) - np.max(self.uR) * 0.15
+
+        idxs_D_uD = np.arange(
+            0,
+            Nbound_x*(Nbound_ys - 1)*self.Nsub_y + 1,
+            Nbound_x*(Nbound_ys - 1)
+        )
+
+        u[idxs_D_uD] = self.uD
+
+        idxs_P_uD = np.array([])
+        idxs_bot_uD = np.array([])
+        for j in range(self.Nsub_y + 1):
+            idxs_P_uD_j = np.arange(
+                Nbound_x*(Nbound_ys - 1)*j,
+                Nbound_x*(Nbound_ys - 1)*j +
+                (Nbound_xs - 1)*self.Nsub_x + 1,
+                (Nbound_xs - 1)
+            )
+
+            idxs_P_uD = np.concatenate((
+                idxs_P_uD,
+                idxs_P_uD_j
+            ))
+
+            idxs_bot_uD_j = np.arange(
+                Nbound_x*(Nbound_ys - 1)*j,
+                Nbound_x*(Nbound_ys - 1)*j + (Nbound_xs - 1)*self.Nsub_x + 1
+            )
+
+            idxs_bot_uD_j = np.setdiff1d(idxs_bot_uD_j, idxs_P_uD)
+            idxs_bot_uD = np.concatenate((idxs_bot_uD, idxs_bot_uD_j))
+
+        idxs_P_uD = idxs_P_uD.astype(int)
+        idxs_P_uD = np.setdiff1d(idxs_P_uD, idxs_D_uD.astype(int))
+        idxs_bot_uD = idxs_bot_uD.astype(int)
+
+        bottom_bound_r = self.get_remaining_numeration(self.bottom_r)
+        top_bound_r = self.get_remaining_numeration(self.top_r)
+
+        idxs_bot_uR = np.array([])
+        for s in range(self.Nsub_x*self.Nsub_y):
+            idxs_bot_uR = np.concatenate(
+                (idxs_bot_uR, bottom_bound_r + s*self.Nr)).astype(int)
+
+        for i in range(self.Nsub_x):
+            offset = (self.Nsub_x*(self.Nsub_y - 1)) * self.Nr
+            idxs_bot_uR = np.concatenate((
+                idxs_bot_uR, top_bound_r + i*self.Nr + offset)).astype(int)
+
+        idxs_left_uD = []
+        for i in range(self.Nsub_x + 1):
+            idxs_left_uD_j = np.arange(
+                i*(Nbound_xs - 1) + 0,
+                i*(Nbound_xs - 1) + Nbound_x*Nbound_y,
+                Nbound_x
+            )
+            idxs_left_uD_j = np.setdiff1d(idxs_left_uD_j, idxs_P_uD)
+            idxs_left_uD_j = np.setdiff1d(idxs_left_uD_j, idxs_D_uD)
+            idxs_left_uD = np.concatenate((idxs_left_uD, idxs_left_uD_j))
+
+        idxs_left_uD = idxs_left_uD.astype(int)
+
+        left_bound_r = self.get_remaining_numeration(self.left_r)
+        right_bound_r = self.get_remaining_numeration(self.right_r)
+
+        idxs_left_uR = np.array([])
+        for i in range(self.Nsub_x):
+            for j in range(self.Nsub_y):
+                offset = (j*self.Nsub_x + i) * self.Nr
+                idxs_left_uR = np.concatenate(
+                    (idxs_left_uR, left_bound_r + offset)
+                )
+
+        for j in range(self.Nsub_y):
+            offset = (self.Nsub_x*j + self.Nsub_x - 1)*self.Nr
+            idxs_left_uR = np.concatenate(
+                (idxs_left_uR, right_bound_r + offset)
+            )
+
+        idxs_left_uR = idxs_left_uR.astype(int)
+
+        u[idxs_P_uD] = self.uP
+        u[idxs_bot_uD] = self.uR[idxs_bot_uR]
+        u[idxs_left_uD] = self.uR[idxs_left_uR]
+
+        u_mat = u.reshape((Nbound_y, Nbound_x))
+        plot_sparse_matrix(u_mat, 'Solution - u field')

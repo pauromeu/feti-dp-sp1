@@ -58,7 +58,7 @@ def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, 
     return Fp
 
 
-def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, *args):
+def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-12, returns_run_info=False, *args):
     SPP, APq, Ks, rs, Kqrs_list, BRs_list = args
 
     chunk = len(APq) // size
@@ -68,6 +68,8 @@ def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, *args):
     Krrs = Ks[rs][:, rs]
     Krrs_inv = LA.inv(Krrs)
     LA_SPP = LA.cholesky(SPP)
+
+    start = MPI.Wtime()
 
     # r = d - np.dot(F, lamb)
     r = d - \
@@ -93,4 +95,10 @@ def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, *args):
 
     if rank == 0:
         print(f"Number of iterations required: {i + 1}")
-    return lamb
+
+    end = MPI.Wtime()
+
+    if returns_run_info:
+        return [lamb, i + 1, end - start]
+    else:
+        return lamb

@@ -1,30 +1,36 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
-nodes = [1, 2, 4, 8]
-execution_times = [1.122380, 0.619830, 0.479830, 0.433440]
+execution_times = [0.23173, 0.12999, 0.11024, 0.08501, 0.07586, 0.07129]
+nodes = [1, 2, 3, 4, 6, 8]
 
 # Calculate the speedup
 speedup = [execution_times[0] / t for t in execution_times]
 
-# Create logarithmic base 2 x-axis values
-log_nodes = np.log2(nodes)
+# Set the figure size
+plt.figure(figsize=(4, 4*2/3))
 
 # Plot the speedup
-plt.plot(log_nodes, speedup, marker='o', label='Measured Speedup')
+plt.plot(nodes, speedup, marker='o', color='purple', label='Measured Speedup')
 
 # Calculate the ideal speedup based on Amdahl's Law
-ideal_speedup = np.log2(np.array([1, 2, 4, 8])) + 1
+ideal_speedup = nodes
 
 # Plot the ideal speedup line
-plt.plot(log_nodes, ideal_speedup, marker='',
-         linestyle='--', color='red', label='Ideal Speedup')
+plt.plot(nodes, ideal_speedup, marker='', linestyle='--',
+         color='red', label='Ideal Speedup')
+
+# Set the x-axis scale to logarithmic base 2
+plt.xscale('log', basex=2)
+plt.yscale('log', basey=2)
 
 # Add labels and title
-plt.xlabel('log2(Nodes)')
+plt.xlabel('# cores')
 plt.ylabel('Speedup')
-plt.title('Speedup vs. log2(Number of Nodes)')
 plt.legend()
+
+# Save the image as speedup.png
+plt.savefig('plots/speedup.eps', dpi=300)
 
 # Show the plot
 plt.show()
