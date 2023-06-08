@@ -1,12 +1,121 @@
 import numpy as np
-from mpi4py import MPI
+from scipy.sparse import csr_matrix
 
-from common.assembly_A_local_global_matrices import *
-from common.assembly_K_matrices import *
 from common.mesh_solvers import solve_mesh, solve_parallel_mesh
 from common.mesh_utils import get_F_condition_number_mesh, get_remaining_numeration_mesh, plot_u_boundaries_mesh
 from parallel.cg_feti import *
 from common.utils import *
+
+
+def create_APq_matrices(mesh):
+    APq_array = []  # Array of APq matrices for each subdomain
+
+    for j in range(mesh.Nsub_y):
+        for i in range(mesh.Nsub_x):
+            if i == 0:
+                P_nodes = [
+                    j*mesh.Nsub_x,
+                    (j + 1)*mesh.Nsub_x
+                ]
+            else:
+                P_nodes = [
+                    j*(mesh.Nsub_x) + i - 1,
+                    j*(mesh.Nsub_x) + i,
+                    (j + 1)*(mesh.Nsub_x) + i - 1,
+                    (j + 1)*(mesh.Nsub_x) + i
+                ]
+            APqs = np.zeros([mesh.NP, len(P_nodes)])
+            for col, node in enumerate(P_nodes):
+                APqs[node, col] = 1
+            APq_array.append(APqs)
+
+    return APq_array
+
+
+def create_ADq_matrices(mesh):
+    ADq_array = []
+    for j in range(mesh.Nsub_y):
+        for i in range(mesh.Nsub_x):
+            if i == 0:
+                D_nodes = [
+                    j,
+                    j + 1
+                ]
+                ADqs = np.zeros([mesh.ND, len(D_nodes)])
+                for col, node in enumerate(D_nodes):
+                    ADqs[int(node), col] = 1
+            else:
+                ADqs = []
+            ADq_array.append(ADqs)
+    return ADq_array
+
+
+def assembly_KPP_matrix(Ks, APq, qs, qs_left_bound, mesh):
+    KPP = np.zeros([mesh.NP, mesh.NP])
+    # KPP = csr_matrix((mesh.NP, mesh.NP))
+
+    for APqs in APq:
+        if np.shape(APqs)[1] == len(qs):
+            Kqqs = csr_matrix(Ks[qs][:, qs])  # Obtain local Kqqs from local Ks
+        else:
+            # Obtain local Kqqs from local Ks
+            Kqqs = csr_matrix(Ks[qs_left_bound][:, qs_left_bound])
+        KPP += APqs @ Kqqs @ APqs.T
+
+    return KPP
+
+
+def assembly_KRR_matrix(Ks, ARr, rs, mesh):
+    KRR = np.zeros([mesh.NR, mesh.NR])
+    # KRR = csr_matrix((mesh.NR, mesh.NR))
+    Kqqs = csr_matrix(Ks[rs][:, rs])  # Obtain local KRR from local Ks
+
+    for ARrs in ARr:
+        KRR += ARrs @ Kqqs @ ARrs.T
+
+    return KRR
+
+
+def assembly_KRP_matrix(Ks, APq, ARr, qs, qs_left_bound, rs, mesh):
+    KRP = np.zeros([mesh.NR, mesh.NP])
+    # KRP = csr_matrix((mesh.NR, mesh.NP))
+    Krqs_list = []
+
+    for APqs, ARrs in zip(APq, ARr):
+        if np.shape(APqs)[1] == len(qs):
+            Kqrs = csr_matrix(Ks[rs][:, qs])  # Obtain local Kqqs from local Ks
+        else:
+            # Obtain local Kqqs from local Ks
+            Kqrs = csr_matrix(Ks[rs][:, qs_left_bound])
+        KRP += ARrs @ Kqrs @ APqs.T
+        Krqs_list.append(Kqrs)
+
+    return KRP, Krqs_list
+
+
+def assembly_KPD_matrix(Ks, APq, ADq, qs_left_bound, qs_right_bound, mesh):
+    KPD = np.zeros([mesh.NP, mesh.ND])
+    # KPD = csr_matrix((mesh.NP, mesh.ND))
+
+    for APqs, ADqs in zip(APq, ADq):
+        if type(ADqs) is not np.ndarray:
+            continue
+        Kqds = csr_matrix(Ks[qs_right_bound][:, qs_left_bound])
+        KPD += APqs @ Kqds @ ADqs.T
+    return KPD
+
+
+def assembly_KRD_matrix(Ks, ARr, ADq, qs_left_bound, rs, mesh):
+    KRD = np.zeros([mesh.NR, mesh.ND])
+    # KRD = csr_matrix((mesh.NR, mesh.ND))
+
+    for ARrs, ADqs in zip(ARr, ADq):
+        if type(ADqs) is not np.ndarray:
+            continue
+        Krds = csr_matrix(Ks[rs][:, qs_left_bound])
+        KRD += ARrs @ Krds @ ADqs.T
+
+    return KRD
 
 
 def create_ARr_matrices_big(mesh):

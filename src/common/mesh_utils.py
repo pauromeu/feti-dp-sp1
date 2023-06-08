@@ -126,5 +126,5 @@ def get_F_condition_number_mesh(mesh):
     IR = np.eye(mesh.NR)  # RxR identity matrix
     F = -mesh.BlambdaR @ KRR_inv @ (mesh.KRP @ SPP_inv @
                                     mesh.KPR @ KRR_inv + IR) @ mesh.BlambdaR.T
-    cond_num = np.linalg.cond(mesh.F)
+    cond_num = np.linalg.cond(F)
     return [F, SPP, cond_num]
