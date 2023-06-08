@@ -93,17 +93,13 @@ class SubdomainsMesh:
         self.set_ADq_matrices()
 
     def set_K_matrices(self):
-        self.KRR = assembly_KRR_matrix(self.Ks, self.ARr_array, self.rs, self)
-        self.KPP = assembly_KPP_matrix(
-            self.Ks, self.APq_array, self.qs, self.qs_right, self)
-        self.KRP, self.Krqs_list = assembly_KRP_matrix(
-            self.Ks, self.APq_array, self.ARr_array, self.qs, self.qs_right, self.rs, self)
+        self.KRR = assembly_KRR_matrix(self)
+        self.KPP = assembly_KPP_matrix(self)
+        self.KRP, self.Krqs_list = assembly_KRP_matrix(self)
         self.KPR = self.KRP.T
         self.Kqrs_list = [Krqs.T for Krqs in self.Krqs_list]
-        self.KPD = assembly_KPD_matrix(
-            self.Ks, self.APq_array, self.ADq_array, self.qs_left_bound, self.qs_right, self)
-        self.KRD = assembly_KRD_matrix(
-            self.Ks, self.ARr_array, self.ADq_array, self.qs_left_bound, self.rs, self)
+        self.KPD = assembly_KPD_matrix(self)
+        self.KRD = assembly_KRD_matrix(self)
 
     def set_B_matrices(self):
         self.BlambdaR, self.Brs_list = assembly_BR_matrix_big(self)
