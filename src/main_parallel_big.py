@@ -40,21 +40,10 @@ qs_top_left = 8
 qs_top_right = 11
 
 qs = [qs_bottom_left, qs_bottom_right, qs_top_left, qs_top_right]
-
 rs = np.setdiff1d(np.arange(len(fs)), qs)
 
 m1 = SubdomainsMesh(Nsub_x, Nsub_y, Ks, fs, qs, rs, bounds_r)
 
-m1.set_A_global_local_matrices()
-
-m1.APq_array[0]
-
-# m1.set_K_matrices()
-# m1.set_B_matrices()
-# m1.set_f_vectors()
-# m1.set_d_vector()
-# m1.set_uD_vector()
-# m1.solve()
-# m1.solve_parallel(comm, size, rank, returns_run_info=True)
 
 m1.build_and_solve_parallel(comm, size, rank, True)
+m1.plot_u_boundaries()

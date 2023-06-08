@@ -58,7 +58,7 @@ def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, 
     return Fp
 
 
-def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-12, returns_run_info=False, *args):
+def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, returns_run_info=False, *args):
     SPP, APq, Ks, rs, Kqrs_list, BRs_list = args
 
     chunk = len(APq) // size

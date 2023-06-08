@@ -2,6 +2,7 @@ import numpy as np
 from common.assembly_A_local_global_matrices import *
 from common.assembly_K_matrices import *
 from mpi4py import MPI
+from common.mesh_solvers import solve_mesh, solve_parallel_mesh
 from parallel.cg_feti import *
 from common.utils import *
 
@@ -282,77 +283,14 @@ class SubdomainsMesh:
         self.cond_num = np.linalg.cond(self.F)
 
     def solve(self):
-        KRR_inv = np.linalg.inv(self.KRR)
-        # KRR_inv = inv(KRR)
-
-        SPP = self.KPP - self.KPR @ KRR_inv @ self.KRP
-        SPP_inv = np.linalg.inv(SPP)
-        # SPP_inv = inv(SPP)
-
-        fPH = self.fP - self.KPD @ self.uD
-        fRH = self.fR - self.KRD @ self.uD
-
-        IR = np.eye(self.NR)  # RxR identity matrix
-        # IR = identity(mesh.NR)
-
-        dH = self.d - self.BlambdaR @ KRR_inv @ (
-            (IR + self.KRP @ SPP_inv @ self.KPR @ KRR_inv) @ fRH - self.KRP @ SPP_inv @ fPH)
-        F = -self.BlambdaR @ KRR_inv @ (self.KRP @ SPP_inv @
-                                        self.KPR @ KRR_inv + IR) @ self.BlambdaR.T
-
-        lambda_ = np.linalg.solve(F, dH)
-
-        # Compute u
-        # uP
-        self.uP = SPP_inv @ (fPH - self.KPR @ KRR_inv @ fRH +
-                             self.KPR @ KRR_inv @ self.BlambdaR.T @ lambda_)
-
-        # uR
-        self.uR = KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @ KRR_inv) @ fRH \
-            - KRR_inv @ self.KRP @ SPP_inv @ fPH \
-            - KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @
-                         KRR_inv) @ self.BlambdaR.T @ lambda_
+        self.uP, self.uR = solve_mesh(self)
 
     def solve_parallel(self, comm, size, rank, returns_run_info=False):
-        KRR_inv = np.linalg.inv(self.KRR)
-        SPP = self.KPP - self.KPR @ KRR_inv @ self.KRP
-        SPP_inv = np.linalg.inv(SPP)
-
-        fPH = self.fP - self.KPD @ self.uD
-        fRH = self.fR - self.KRD @ self.uD
-
-        IR = np.eye(self.NR)  # RxR identity matrix
-
-        dH = self.d - self.BlambdaR @ KRR_inv @ ((IR + self.KRP @ SPP_inv @
-                                                  self.KPR @ KRR_inv) @ fRH - self.KRP @ SPP_inv @ fPH)
-        start = MPI.Wtime()
-
-        lambda_, iterations, time = cg_parallel_feti(comm, size, rank, dH, np.zeros_like(dH), 1e-10, returns_run_info,
-                                                     SPP, self.APq_array, self.Ks, self.rs, self.Kqrs_list, self.Brs_list
-                                                     )
-
-        end = MPI.Wtime()
-        if rank == 0:
-            print("Time to run CG with", size,
-                  "processors ->", round(end - start, 5), "s")
-
-        # Compute u
-        # uP
-        self.uP = SPP_inv @ (fPH - self.KPR @ KRR_inv @ fRH +
-                             self.KPR @ KRR_inv @ self.BlambdaR.T @ lambda_)
-
-        # uR
-        self.uR = KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @ KRR_inv) @ fRH \
-            - KRR_inv @ self.KRP @ SPP_inv @ fPH \
-            - KRR_inv @ (IR + self.KRP @ SPP_inv @ self.KPR @
-                         KRR_inv) @ self.BlambdaR.T @ lambda_
-
+        self.uP, self.uR, iterations, time = solve_parallel_mesh(
+            self, comm, size, rank, True
+        )
         if returns_run_info:
             return [iterations, time]
-
-    def assembly_u_vector(self):
-        u = np.zeros(self.Ntot)
-        nodesD = np.arange()
 
     def build_and_solve(self):
         self.set_A_global_local_matrices()
@@ -371,11 +309,10 @@ class SubdomainsMesh:
         self.set_d_vector()
         self.set_uD_vector()
         self.get_F_condition_number()
-        if returns_run_info:
-            run_info = self.solve_parallel(comm, size, rank, returns_run_info)
+        run_info = self.solve_parallel(comm, size, rank, True)
+        if returns_run_info:    
             return run_info
-        else:
-            self.solve_parallel()
+        
 
     def plot_u_boundaries(self):
         Nbound_x = (self.Nsub_x + 1) + self.Nsub_x * len(self.bottom_r)
