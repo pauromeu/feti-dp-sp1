@@ -5,7 +5,7 @@ from common.mesh_assembly_A import create_ADq_matrices, create_APq_matrices, cre
 from common.mesh_assembly_B import assembly_BR_matrix_big, assembly_Dirichlet_BR_matrix_big
 from common.mesh_assembly_f import assembly_fR_vector, assemby_fP_vector, assemby_fD_vector
 from common.mesh_assembly_K import assembly_KPD_matrix, assembly_KPP_matrix, assembly_KRR_matrix, assembly_KRP_matrix, assembly_KRD_matrix
-from common.mesh_solvers import solve_mesh, solve_parallel_mesh
+from common.mesh_solvers import precompute_matrices_solver_mesh, solve_mesh, solve_parallel_mesh
 from common.mesh_utils import get_F_condition_number_mesh, get_remaining_numeration_mesh, plot_u_boundaries_mesh
 from parallel.cg_feti import *
 from common.utils import *
@@ -126,6 +126,10 @@ class SubdomainsMesh:
         self.F, self.SPP, self.cond_num = get_F_condition_number_mesh(self)
         return self.cond_num
 
+    def precompute_matrices_solver(self):
+        self.SPP, self.LA_SPP, self.Krrs_inv = \
+            precompute_matrices_solver_mesh(self)
+
     def solve(self):
         self.uP, self.uR = solve_mesh(self)
 
@@ -143,6 +147,7 @@ class SubdomainsMesh:
         self.set_f_vectors()
         self.set_d_vector()
         self.set_uD_vector()
+        self.precompute_matrices_solver()
         self.solve()
 
     def build_and_solve_parallel(self, comm, size, rank, returns_run_info=False):
@@ -152,7 +157,8 @@ class SubdomainsMesh:
         self.set_f_vectors()
         self.set_d_vector()
         self.set_uD_vector()
-        self.get_F_condition_number()
+        self.precompute_matrices_solver()
+        # self.get_F_condition_number()
         run_info = self.solve_parallel(comm, size, rank, True)
         if returns_run_info:
             return run_info

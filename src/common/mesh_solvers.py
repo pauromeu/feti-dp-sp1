@@ -53,9 +53,8 @@ def solve_parallel_mesh(mesh, comm, size, rank, returns_run_info=False):
                                               mesh.KPR @ KRR_inv) @ fRH - mesh.KRP @ SPP_inv @ fPH)
     start = MPI.Wtime()
 
-    lambda_, iterations, time = cg_parallel_feti(comm, size, rank, dH, np.zeros_like(dH), 1e-10, True,
-                                                 SPP, mesh.APq_array, mesh.Ks, mesh.rs, mesh.Kqrs_list, mesh.Brs_list
-                                                 )
+    lambda_, iterations, time = cg_parallel_feti(
+        comm, size, rank, mesh, dH, np.zeros_like(dH), 1e-10, True)
 
     end = MPI.Wtime()
     if rank == 0:
@@ -78,3 +77,14 @@ def solve_parallel_mesh(mesh, comm, size, rank, returns_run_info=False):
 
     else:
         return [uP, uR]
+
+
+def precompute_matrices_solver_mesh(mesh):
+    KRR_inv = np.linalg.inv(mesh.KRR)
+    SPP = mesh.KPP - mesh.KPR @ KRR_inv @ mesh.KRP
+    Krrs_inv = np.linalg.inv(mesh.Ks[mesh.rs][:, mesh.rs])
+    Krrs = mesh.Ks[mesh.rs][:, mesh.rs]
+    Krrs_inv = np.linalg.inv(Krrs)
+    LA_SPP = np.linalg.cholesky(SPP)
+
+    return SPP, LA_SPP, Krrs_inv

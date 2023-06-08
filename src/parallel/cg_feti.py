@@ -26,27 +26,27 @@ def solve_cholesky(L, b):
     return x
 
 
-def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP):
+def sub_mat_vec_product(comm, rank, low, high, p, mesh):
     # print("This is rank ", rank, " with low:", low, " and high: ", high)
-    n = BRs_list[0].shape[0]
+    n = mesh.Brs_list[0].shape[0]
 
-    x_local = np.zeros(APq[0].shape[0])
+    x_local = np.zeros(mesh.APq_array[0].shape[0])
     b_local = np.zeros(n)
-    for (Apqs, Kqrs, Brs) in zip(APq[low:high], Kqrs_list[low:high], BRs_list[low:high]):
-        x_local += Apqs @ Kqrs @ Krrs_inv @ Brs.T @ p
-        b_local += Brs @ Krrs_inv @ Brs.T @ p
+    for (Apqs, Kqrs, Brs) in zip(mesh.APq_array[low:high], mesh.Kqrs_list[low:high], mesh.Brs_list[low:high]):
+        x_local += Apqs @ Kqrs @ mesh.Krrs_inv @ Brs.T @ p
+        b_local += Brs @ mesh.Krrs_inv @ Brs.T @ p
 
     x = np.zeros_like(x_local)
     comm.Allreduce(x_local, x, op=MPI.SUM)
 
     alpha = np.zeros_like(x)
     if rank == 0:
-        alpha = solve_cholesky(LA_SPP, x)
+        alpha = solve_cholesky(mesh.LA_SPP, x)
     comm.Bcast(alpha, root=0)
 
     a_local = np.zeros(n)
-    for (BRs, Kqrs, Apqs) in zip(BRs_list[low:high], Kqrs_list[low:high], APq[low:high]):
-        a_local += BRs @ Krrs_inv @ Kqrs.T @ Apqs.T @ alpha
+    for (BRs, Kqrs, Apqs) in zip(mesh.Brs_list[low:high], mesh.Kqrs_list[low:high], mesh.APq_array[low:high]):
+        a_local += BRs @ mesh.Krrs_inv @ Kqrs.T @ Apqs.T @ alpha
 
     a = np.zeros_like(a_local)
     comm.Allreduce(a_local, a, op=MPI.SUM)
@@ -58,31 +58,28 @@ def subdomains_mat_vec_multiplication(comm, rank, low, high, p, APq, Kqrs_list, 
     return Fp
 
 
-def cg_parallel_feti(comm, size, rank, d, lamb, tol=1e-10, returns_run_info=False, *args):
-    SPP, APq, Ks, rs, Kqrs_list, BRs_list = args
-
-    chunk = len(APq) // size
+def cg_parallel_feti(comm, size, rank, mesh, d, lamb, tol=1e-10, returns_run_info=False):
+    chunk = len(mesh.APq_array) // size
     low = rank * chunk
-    high = (rank + 1) * chunk if rank != size - 1 else len(APq)
+    high = (rank + 1) * chunk if rank != size - 1 else len(mesh.APq_array)
 
-    Krrs = Ks[rs][:, rs]
+    Krrs = mesh.Ks[mesh.rs][:, mesh.rs]
     Krrs_inv = LA.inv(Krrs)
-    LA_SPP = LA.cholesky(SPP)
+    LA_SPP = LA.cholesky(mesh.SPP)
 
     start = MPI.Wtime()
 
     # r = d - np.dot(F, lamb)
-    r = d - \
-        subdomains_mat_vec_multiplication(
-            comm, rank, low, high, lamb, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP
-        )
+    r = d - sub_mat_vec_product(
+        comm, rank, low, high, lamb, mesh
+    )
     p = r.copy()
     rsold = np.dot(r.T, r)
 
     for i in range(len(d)):
         # Fp = np.dot(F, p)
-        Fp = subdomains_mat_vec_multiplication(
-            comm, rank, low, high, p, APq, Kqrs_list, BRs_list, Krrs_inv, LA_SPP
+        Fp = sub_mat_vec_product(
+            comm, rank, low, high, p, mesh
         )
         alpha = rsold / np.dot(p.T, Fp)
         lamb = lamb + alpha * p
