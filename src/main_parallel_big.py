@@ -4,22 +4,22 @@ from common.HeatTransferProblem import HeatTransferProblem
 from common.SubdomainsMesh import SubdomainsMesh
 from mpi4py import MPI
 
-# Get the path of the current file
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# # Get the path of the current file
+# current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Construct the relative paths based on the current file's location
-localF_path = os.path.join(current_dir, "..", "data",
-                           "big", "localF_small.dat")
-localK_path = os.path.join(current_dir, "..", "data",
-                           "big", "localK_small.dat")
+# # Construct the relative paths based on the current file's location
+# localF_path = os.path.join(current_dir, "..", "data",
+#                            "big", "localF_small.dat")
+# localK_path = os.path.join(current_dir, "..", "data",
+#                            "big", "localK_small.dat")
 
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-# SMALL
-# Import data
+# # SMALL
+# # Import data
 # fs = np.genfromtxt(localF_path)
 # Ks = np.genfromtxt(localK_path)
 
@@ -30,8 +30,8 @@ size = comm.Get_size()
 
 # bounds_r = [left_r, right_r, bottom_r, top_r]
 
-# # Initial data
-# # Number of subdomains
+# Initial data
+# Number of subdomains
 # Nsub_x = 5
 # Nsub_y = 5
 
@@ -49,15 +49,17 @@ size = comm.Get_size()
 # m1.plot_u_boundaries()
 
 
-# Heat problem
-Nsub_x = 6
-Nsub_y = 4
+# Heat problem data, change as desired
+Nsub_x = 4  # Number of subdomains in x
+Nsub_y = 4  # Number os subdomains in y
 
-nx = 8
-ny = 10
+nx = 10  # Nodes in a subdomain in x
+ny = 10  # Nodes in a subdomain in y
 
 p = HeatTransferProblem(nx, ny)
 m2 = SubdomainsMesh.from_problem(Nsub_x, Nsub_y, p)
 
 m2.build_and_solve_parallel(comm, size, rank, True)
-m2.plot_u_boundaries()
+
+# if rank == 0:
+#     m2.plot_u_boundaries()
