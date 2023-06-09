@@ -51,9 +51,9 @@ size = comm.Get_size()
 
 # Heat problem
 Nsub_x = 6
-Nsub_y = 6
+Nsub_y = 4
 
-nx = 10
+nx = 8
 ny = 10
 
 p = HeatTransferProblem(nx, ny)
