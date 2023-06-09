@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from common.HeatTransferProblem import HeatTransferProblem
 from common.SubdomainsMesh import SubdomainsMesh
 from mpi4py import MPI
 
@@ -19,31 +20,44 @@ size = comm.Get_size()
 
 # SMALL
 # Import data
-fs = np.genfromtxt(localF_path)
-Ks = np.genfromtxt(localK_path)
+# fs = np.genfromtxt(localF_path)
+# Ks = np.genfromtxt(localK_path)
 
-left_r = np.array([4])
-right_r = np.array([7])
-bottom_r = np.array([1, 2])
-top_r = np.array([9, 10])
+# left_r = np.array([4])
+# right_r = np.array([7])
+# bottom_r = np.array([1, 2])
+# top_r = np.array([9, 10])
 
-bounds_r = [left_r, right_r, bottom_r, top_r]
+# bounds_r = [left_r, right_r, bottom_r, top_r]
 
-# Initial data
-# Number of subdomains
-Nsub_x = 10
-Nsub_y = 10
+# # Initial data
+# # Number of subdomains
+# Nsub_x = 5
+# Nsub_y = 5
 
-qs_bottom_left = 0
-qs_bottom_right = 3
-qs_top_left = 8
-qs_top_right = 11
+# qs_bottom_left = 0
+# qs_bottom_right = 3
+# qs_top_left = 8
+# qs_top_right = 11
 
-qs = [qs_bottom_left, qs_bottom_right, qs_top_left, qs_top_right]
-rs = np.setdiff1d(np.arange(len(fs)), qs)
+# qs = [qs_bottom_left, qs_bottom_right, qs_top_left, qs_top_right]
+# rs = np.setdiff1d(np.arange(len(fs)), qs)
 
-m1 = SubdomainsMesh(Nsub_x, Nsub_y, Ks, fs, qs, rs, bounds_r)
+# m1 = SubdomainsMesh(Nsub_x, Nsub_y, Ks, fs, qs, rs, bounds_r)
+
+# m1.build_and_solve_parallel(comm, size, rank, True)
+# m1.plot_u_boundaries()
 
 
-m1.build_and_solve_parallel(comm, size, rank, True)
-m1.plot_u_boundaries()
+# Heat problem
+Nsub_x = 6
+Nsub_y = 6
+
+nx = 10
+ny = 10
+
+p = HeatTransferProblem(nx, ny)
+m2 = SubdomainsMesh.from_problem(Nsub_x, Nsub_y, p)
+
+m2.build_and_solve_parallel(comm, size, rank, True)
+m2.plot_u_boundaries()

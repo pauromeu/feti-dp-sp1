@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.linalg as LA
 from mpi4py import MPI
 from scipy.linalg import solve_triangular
 
@@ -27,7 +26,6 @@ def solve_cholesky(L, b):
 
 
 def sub_mat_vec_product(comm, rank, low, high, p, mesh):
-    # print("This is rank ", rank, " with low:", low, " and high: ", high)
     n = mesh.Brs_list[0].shape[0]
 
     x_local = np.zeros(mesh.APq_array[0].shape[0])
@@ -41,7 +39,8 @@ def sub_mat_vec_product(comm, rank, low, high, p, mesh):
 
     alpha = np.zeros_like(x)
     if rank == 0:
-        alpha = solve_cholesky(mesh.LA_SPP, x)
+        # alpha = solve_cholesky(mesh.LA_SPP, x)
+        alpha = np.linalg.solve(mesh.SPP, x)
     comm.Bcast(alpha, root=0)
 
     a_local = np.zeros(n)
@@ -62,10 +61,6 @@ def cg_parallel_feti(comm, size, rank, mesh, d, lamb, tol=1e-10, returns_run_inf
     chunk = len(mesh.APq_array) // size
     low = rank * chunk
     high = (rank + 1) * chunk if rank != size - 1 else len(mesh.APq_array)
-
-    Krrs = mesh.Ks[mesh.rs][:, mesh.rs]
-    Krrs_inv = LA.inv(Krrs)
-    LA_SPP = LA.cholesky(mesh.SPP)
 
     start = MPI.Wtime()
 
