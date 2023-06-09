@@ -1,5 +1,3 @@
-import numpy as np
-import os
 from common.HeatTransferProblem import HeatTransferProblem
 from common.SubdomainsMesh import SubdomainsMesh
 from mpi4py import MPI
