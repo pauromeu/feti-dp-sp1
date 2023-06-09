@@ -3,7 +3,7 @@ This repository contains the code and the report of my semester project in the M
 
 ## Code organization
 
-The code is contained within the `src/` folder. Two implementations of the method have been made, one serial and one parallel. The functions used are located in the corresponding folders `src/serial/`, `src/parallel/`, and `src/common/`. The `src/common` folder contains useful functions for both implementations.
+The code is contained within the `src/` folder. Two implementations of the method have been made, one serial and one parallel. The functions used are located in the corresponding folders `src/serial/`, `src/parallel/`, and `src/common/`. The `src/common/` folder contains useful functions for both implementations.
 
 There are 4 main files provided that allow reproducing the figures presented in the report:
 
