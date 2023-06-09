@@ -21,5 +21,5 @@ m2 = SubdomainsMesh.from_problem(Nsub_x, Nsub_y, p)
 
 m2.build_and_solve_parallel(comm, size, rank, True)
 
-# if rank == 0:
-#     m2.plot_u_boundaries()
+if rank == 0:
+    m2.plot_u_boundaries()

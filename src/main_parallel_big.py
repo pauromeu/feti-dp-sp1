@@ -41,7 +41,7 @@ rs = np.setdiff1d(np.arange(len(fs)), qs)
 # Number of subdomains
 # Change as desired
 Nsub_x = 5
-Nsub_y = 2
+Nsub_y = 3
 
 m = SubdomainsMesh(Nsub_x, Nsub_y, Ks, fs, qs, rs, bounds_r)
 
