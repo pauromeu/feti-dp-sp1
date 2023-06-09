@@ -20,7 +20,7 @@ The main method of this class is `SubdomainsMesh.build_and_solve_parallel(...)`,
 Another important method is `SubdomainsMesh.plot_u_boundaries()`. This method plots the solution in the boundaries of all subdomains. An example is shown here.
 ![SmallMesh](/report/figures/serial_mesh.png)
 
-- `src/common/HeatTransferProblem.py`: Problem object that defines the stiffness matrix and the source vector for a two-dimensional heat conduction problem. The only arguments for the constructor are the number of nodes in x and y dimensions to create. This problem can be solved using the `SubdomainsMesh` class and its second constructor `SubdomainsMesh.from_problem(Nsub_x, Nsub_y, HeatTransferProblem(nx, ny))`. This allows quickly creating problems of different sizes and numbers of subdomains to test the method's efficiency. For example, the following figure shows the solution for a mesh with `Nsub_x = 6` and `Nsub_y = 4` where each subdomain has `nx = 10` x `ny = 8` nodes:
+- `src/common/HeatTransferProblem.py`: Problem object that defines the stiffness matrix and the source vector for a two-dimensional heat conduction problem. The only arguments for the constructor are the number of nodes in x and y dimensions to create. This problem can be solved using the `SubdomainsMesh` class and its second constructor `SubdomainsMesh.from_problem(Nsub_x, Nsub_y, HeatTransferProblem(nx, ny))`. This allows quickly creating problems of different sizes and numbers of subdomains to test the method's efficiency. For example, the following figure shows the solution for a mesh with `Nsub_x = 6` and `Nsub_y = 4` where each subdomain has `nx = 10` x `ny = 8` nodes.
 ![HeatMesh](/report/figures/heat_mesh.png)
 
 ## Run parallel implementation
